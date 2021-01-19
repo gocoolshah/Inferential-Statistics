@@ -1,0 +1,120 @@
+Gokul Shah
+1/19/2021
+
+
+
+Executive Summary
+
+This document is the report of the final course project for the Inferential Statistics course. The project consisted of exploring a real-world dataset - a subset of the General Social Survey (GSS)- and creating a report that included statistical inference on a question of interest.
+
+
+Load data and packages
+library(tidyr)
+library(pander)
+library(pwr)
+library(ggplot2)
+library(dplyr)
+library(statsr)
+load("gss.Rdata")
+
+
+Part 1
+
+Background - Excerpted from the course html course information
+
+This extract of the General Social Survey (GSS) Cumulative File 1972-2012 provides a sample of selected indicators in the GSS with the goal of providing a convenient data resource for students learning statistical reasoning using the R language. Unlike the full General Social Survey Cumulative File, we have removed missing values from the responses and created factor variables when appropriate to facilitate analysis using R. Our hope is that this will allow students to focus on statistical concepts without having to (initially) be concerned about some of the data management and interpretation issues associated with missing data and factor variables in R. Other than the two modifications mentioned above, all data and coding come from the original dataset. Students and researchers seeking to conduct research or explore the full codebook behind the full General Social Survey Cumulative File are urged to consult the original dataset at the citation that follows:The GSS gathers data on contemporary American society in order to monitor and explain trends and constants in attitudes, behaviors, and attributes. Hundreds of trends have been tracked since 1972. In addition, since the GSS adopted questions from earlier surveys, trends can be followed for up to 70 years.
+
+This report used a subset of the GSS as provided by the course.
+
+Methodology - Excerpted from the Wikipedia entry for the GSS:
+
+The GSS is conducted as an in-person interview by the team at National Opinion Research Center (NORC) - hosted at the University of Chicago - and targets adults living in the United States. The GSS sample is drawn using an area probability design that randomly selects respondents in households across the United States to take part in the survey. Respondents that become part of the GSS sample are from a mix of urban, suburban, and rural geographic areas. Participation in the study is strictly voluntary.
+
+The survey is conducted face-to-face with an in-person interview by NORC at the University of Chicago. The survey was conducted every year from 1972 to 1994 (except in 1979, 1981, and 1992). Since 1994, it has been conducted every other year. The survey takes about 90 minutes to administer. As of 2014, 30 national samples with 59,599 respondents and 5,900+ variables have been collected.
+
+
+Part 2
+
+The research question chosen was
+
+Have the regions of USA the same perspective about how the government are expending the resources to protecting the environment
+
+Climate change its a reality and every action has an effect on environmental resources. For this reason the variable named NATENVIR was chosen as a response variable to see what is the perspective about this matter since 2006.
+
+#Subset
+df_study <- select(gss, year, region, natenvir) %>% na.omit() %>%
+  mutate(positive=grepl("About Right", natenvir)) %>%
+  mutate(recent=as.factor(ifelse(year>=2006,"R","H")))
+alltime <- df_study
+summary(alltime)
+##       year                  region            natenvir      positive      
+##  Min.   :1973   E. Nor. Central:6117   Too Little :19259   Mode :logical  
+##  1st Qu.:1978   South Atlantic :6025   About Right: 9539   FALSE:22075    
+##  Median :1988   Middle Atlantic:4830   Too Much   : 2816   TRUE :9539     
+##  Mean   :1989   Pacific        :4191                                      
+##  3rd Qu.:2000   W. Sou. Central:2775                                      
+##  Max.   :2012   W. Nor. Central:2315                                      
+##                 (Other)        :5361                                      
+##  recent   
+##  H:27245  
+##  R: 4369  
+##           
+##           
+##           
+##           
+## 
+
+
+Part 3: Exploratory data analysis
+
+Before performing inference, we can perform some exploratory data analysis using both summary statistics/tables and visual plots.
+alltime_table <- table(alltime$region,alltime$positive)
+alltime_table
+##                  
+##                   FALSE TRUE
+##   New England      1109  366
+##   Middle Atlantic  3605 1225
+##   E. Nor. Central  4225 1892
+##   W. Nor. Central  1541  774
+##   South Atlantic   4145 1880
+##   E. Sou. Central  1330  697
+##   W. Sou. Central  1855  920
+##   Mountain         1267  592
+##   Pacific          2998 1193
+prop.table(alltime_table)
+##                  
+##                        FALSE       TRUE
+##   New England     0.03507940 0.01157715
+##   Middle Atlantic 0.11403176 0.03874866
+##   E. Nor. Central 0.13364332 0.05984690
+##   W. Nor. Central 0.04874423 0.02448282
+##   South Atlantic  0.13111280 0.05946732
+##   E. Sou. Central 0.04206997 0.02204719
+##   W. Sou. Central 0.05867654 0.02910103
+##   Mountain        0.04007718 0.01872588
+##   Pacific         0.09483140 0.03773645
+g <- ggplot(alltime) + aes(x=region,fill=positive) + geom_bar(position = "fill") +
+  labs(x="Region",y="Proportion",title="Improving & Protecting Environment") +
+  scale_fill_discrete(name="Opinion",labels=c("Positive","Negative"))
+g
+
+
+
+
+Inference
+environment <-chisq.test(alltime$region,alltime$positive)
+environment
+## 
+##  Pearson's Chi-squared test
+## 
+## data:  alltime$region and alltime$positive
+## X-squared = 126.58, df = 8, p-value < 2.2e-16
+
+
+Interpretation of results
+
+Since the p-values are below alpha (0.05), we can conclude that there is sufficient evidence to reject H0 (null hypothesis).
+
+In the context of the research question, it mean that there is evidence that the perception in every region is different related to environment investment.
+
+Ultimately, though, this result cannot be used to determine causality. This occurs because the GSS is an observational study, and not an experiment with randomized assignment to treatment.
